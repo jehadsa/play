@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Cache - GoldHEN</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #ff0000;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .loading-animation {
+            margin: 30px 0;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 0, 0, 0.3);
+            border-top: 4px solid #ff0000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 0, 0, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: #ff0000;
+            border-radius: 4px;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        .message {
+            margin: 20px 0;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .status {
+            color: #ff0000;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .instructions {
+            background: rgba(255, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+            border-left: 4px solid #ff0000;
+        }
+
+        .instructions h3 {
+            color: #ff0000;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            text-align: left;
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .counter {
+            font-size: 1.1rem;
+            color: #cccccc;
+            margin: 15px 0;
+        }
+
+        .auto-redirect {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .btn {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ffffff;
+            border: 1px solid #ff0000;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: rgba(255, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .logo h1 {
+                font-size: 2rem;
+            }
+            
+            .message {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>GoldHEN</h1>
+            <p>Bin Server Web Payloads</p>
+        </div>
+
+        <div class="loading-animation">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+
+        <div class="message">
+            <p>Loading application cache...</p>
+            <p class="status">Please wait</p>
+        </div>
+
+        <div class="counter" id="countdown">
+            Auto redirect in: <span id="timer">10</span> seconds
+        </div>
+
+        <div class="instructions">
+            <h3>Important Information:</h3>
+            <ul>
+                <li>This process is essential for proper application operation</li>
+                <li>Do not close the page during loading</li>
+                <li>The process may take a few seconds</li>
+                <li>You will be automatically redirected after loading is complete</li>
+            </ul>
+        </div>
+
+        <div class="auto-redirect">
+            <p>If auto redirect doesn't work, please use the button below</p>
+            <button class="btn" onclick="redirectToMain()">Go to Main Application</button>
+        </div>
+    </div>
+
+    <script>
+        // Countdown for redirect
+        let countdown = 10;
+        const timerElement = document.getElementById('timer');
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            timerElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                redirectToMain();
+            }
+        }, 1000);
+
+        // Simulate cache loading
+        setTimeout(() => {
+            document.querySelector('.status').textContent = 'Cache loading completed!';
+            document.querySelector('.progress').style.animation = 'none';
+            document.querySelector('.progress').style.width = '100%';
+        }, 3000);
+
+        // Redirect function
+        function redirectToMain() {
+            clearInterval(countdownInterval);
+            window.location.href = 'index.html';
+        }
+
+        // Auto redirect after 10 seconds
+        setTimeout(redirectToMain, 10000);
+
+        // Additional effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = [
+                'Initializing cache...',
+                'Loading components...',
+                'Thank you for your patience...',
+                'Almost done...'
+            ];
+            
+            let currentMessage = 0;
+            const statusElement = document.querySelector('.status');
+            
+            setInterval(() => {
+                if (currentMessage < messages.length) {
+                    statusElement.textContent = messages[currentMessage];
+                    currentMessage++;
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

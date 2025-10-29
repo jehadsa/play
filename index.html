@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldHEN Bin Server Web Payloads</title>
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onload="checkbinserverstatus()">
+    <div class="container">
+        <header class="header">
+            <h1>GoldHEN Bin Server Web Payloads</h1>
+            <div class="firmware-info">
+                PS4 Firmware <span id="PS4fw">v0; Win64; x64 Detected</span>
+            </div>
+        </header>
+
+        <div class="status-bar">
+            <div id="msgs">Checking GoldHEN Bin Server status...</div>
+        </div>
+
+        <main class="main-content">
+            <section class="payloads-section">
+                <h2 class="section-title">PAYLOADS</h2>
+                
+                <div class="button-grid">
+                    <button class="btn" onmouseover="updateMessage('PKG-Backup v1.3 - Modded Version Of App Dumper / 12.02 Port By Kamaleon')" onmouseout="resetMessage()" onclick="load_pkgbackup(); return false">PKG-Backup v1.3</button>
+                    <button class="btn" onmouseover="updateMessage('App Dumper Only v1.8 - Original Version By xVortex / 11.00 Port Al Azif')" onmouseout="resetMessage()" onclick="load_appdumper(); return false">App Dumper Only v1.8</button>
+                    <button class="btn" onmouseover="updateMessage('Disable-Updates v1.0 - 11.00 Port By Al Azif')" onmouseout="resetMessage()" onclick="load_disableupdates(); return false">Disable-Updates v1.0</button>
+                    <button class="btn" onmouseover="updateMessage('Enable-Updates v1.0 - 11.00 Port By Al Azif')" onmouseout="resetMessage()" onclick="load_enableupdates(); return false">Enable-Updates v1.0</button>
+                    <button class="btn" onmouseover="updateMessage('Exit IDU / 11.00 Port Al Azif')" onmouseout="resetMessage()" onclick="load_exitidu(); return false">Exit IDU</button>
+                    <button class="btn" onmouseover="updateMessage('Ftp Server - Original Version By xVortex / 11.00 Port Al Azif')" onmouseout="resetMessage()" onclick="load_ftp(); return false">Ftp Server</button>
+                    <button class="btn" onmouseover="updateMessage('Ps4Debug v1.1.19 - By CTN123')" onmouseout="resetMessage()" onclick="load_ps4debug(); return false">Ps4Debug v1.1.19</button>
+                    <button class="btn" onmouseover="updateMessage('App-2-Usb - Original Version By Stooged / 11.00 Port By Al Azif')" onmouseout="resetMessage()" onclick="load_app2usb(); return false">App-2-Usb</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Devoloper By Jehad Sammak</p>
+            </footer>
+    </div>
+
+    <script>
+        // JavaScript functions for the interface
+
+    // Function to update the message display
+    function updateMessage(message) {
+        document.getElementById('msgs').innerHTML = message;
+    }
+
+    // Function to reset the message display
+    function resetMessage() {
+        document.getElementById('msgs').innerHTML = 'GoldHEN Bin Server Web Payloads';
+    }
+
+    // Function to show loading state
+    function showLoading() {
+        document.getElementById('msgs').classList.add('loading');
+    }
+
+    // Function to hide loading state
+    function hideLoading() {
+        document.getElementById('msgs').classList.remove('loading');
+    }
+
+    // Check Cache Status
+    if (window.applicationCache.status=='0') {
+        window.location.replace("cache.html");
+    }
+
+    // Initialization of variables
+    var payloadData = "";
+    var array = "";
+    var PLfile = "";
+    var LoadedMSG = "";
+    localStorage.setItem("ipaddress","127.0.0.1");
+
+    // Functions
+    function pldone() {
+        document.getElementById('msgs').innerHTML = LoadedMSG;
+        hideLoading();
+    }
+
+    // Function to 'Load' the payload file to be send to GoldHEN Bin Server.	
+    var getPayload = function(payload, onLoadEndCallback) {
+        var req = new XMLHttpRequest();
+        req.open('GET', payload);
+        req.send();
+        req.responseType = "arraybuffer";
+        req.onload = function(event) {
+            if(onLoadEndCallback) onLoadEndCallback(req, event);
+        };
+    };
+
+    // Function to 'Send' the payload file to GoldHEN Bin Server using Html POST method. 
+    var sendPayload = function(url, data, onLoadEndCallback) {
+        var req = new XMLHttpRequest();
+        req.open("POST", url, true);
+        req.send(data);
+        req.onload = function(event) {
+            if(onLoadEndCallback) onLoadEndCallback(req, event);
+        };
+    };
+
+    // Function to check current status of the GoldHEN Bin Server
+    function checkbinserverstatus() {
+        var req = new XMLHttpRequest(); 
+        req.open("POST", "http://"+localStorage.ipaddress+":9090/status");
+        req.send();
+        req.onerror = function() {
+            document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>GoldHEN Bin Server Not Detected!!!</h1>";
+            sessionStorage.isbinserver = "no";
+        };
+        req.onload = function() {
+            var responseJson = JSON.parse(req.responseText);
+            if (responseJson.status == "ready") {
+                document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>GoldHEN Bin Server Detected, Payloads Will run over HTTP-POST!!!</h1>";
+                sessionStorage.isbinserver = "yes";
+            }
+        };
+    }
+
+    // Payloads to be loaded over GoldHEN Bin Server method
+    function LoadpayloadGoldHEN(PLfile) {
+        // Loading Payload via Payload Param.
+        // First do an initial check to see if the BinLoader server is running, ready or busy.
+        var req = new XMLHttpRequest(); 
+        req.open("POST", "http://"+localStorage.ipaddress+":9090/status");
+        req.send();
+        req.onerror = function() {
+            alert("Cannot Load Payload Because The BinLoader Server Is Not Running");
+            return;
+        };
+        req.onload = function() {
+            var responseJson = JSON.parse(req.responseText);
+            if (responseJson.status == "ready") {
+                getPayload(PLfile, function (req) {
+                    if ((req.status === 200 || req.status === 304) && req.response) {
+                        // Sending bins via IP POST Method
+                        sendPayload("http://" + localStorage.ipaddress + ":9090", req.response, function (req) {
+                            if (req.status === 200) {
+                                pldone();
+                            } else {
+                                document.getElementById('msgs').innerHTML = 'Cannot send payload';
+                                return;
+                            }
+                        })
+                    }
+                });
+            } else {
+                alert("Cannot Load Payload Because The BinLoader Server Is Busy");
+                return;
+            }
+        };
+    }
+
+    // Payload loading functions
+    function load_pkgbackup() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading PKG-Backup v1.3. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "PKG-Backup v1.3 Loaded";
+        PLfile = "pl_pkgbackup.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_appdumper() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading App Dumper Only v1.8. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "App Dumper Only v1.8 Loaded";
+        PLfile = "pl_appdumper.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_disableupdates() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Disable-Updates v1.0. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "Disable-Updates v1.0 Loaded";
+        PLfile = "pl_disableupdates.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_enableupdates() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Enable-Updates v1.0. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "Enable-Updates v1.0 Loaded";
+        PLfile = "pl_enableupdates.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_exitidu() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Exit IDU. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "Exit IDU Loaded";
+        PLfile = "pl_exitidu.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_ftp() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Ftp Server. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "Ftp Server Loaded";
+        PLfile = "pl_ftp.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_ps4debug() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Ps4Debug v1.1.19. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "Ps4Debug v1.1.19 Loaded";
+        PLfile = "pl_ps4debug.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    function load_app2usb() {
+        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading App-2-Usb. Please wait!</h1>";
+        showLoading();
+        LoadedMSG = "App-2-Usb Loaded";
+        PLfile = "pl_app2usb.bin";
+        LoadpayloadGoldHEN(PLfile);
+    }
+
+    // Get PS4 firmware version
+    var UA = navigator.userAgent.substring(navigator.userAgent.indexOf('5.0 (') + 19, navigator.userAgent.indexOf(') Apple')).replace("layStation 4/","");
+    document.getElementById('PS4fw').innerHTML = "v"+UA+" Detected";
+  </script>
+</body>
+</html>
