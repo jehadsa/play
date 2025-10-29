@@ -246,11 +246,16 @@
             document.querySelector('.status').textContent = 'Cache loading completed!';
             document.querySelector('.progress').style.animation = 'none';
             document.querySelector('.progress').style.width = '100%';
+            
+            // Set cache flag to prevent infinite loop
+            localStorage.setItem('appCacheLoaded', 'true');
         }, 3000);
 
         // Redirect function
         function redirectToMain() {
             clearInterval(countdownInterval);
+            // Ensure cache flag is set before redirect
+            localStorage.setItem('appCacheLoaded', 'true');
             window.location.href = 'index.html';
         }
 
