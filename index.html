@@ -6,8 +6,76 @@
     <title>GoldHEN Bin Server Web Payloads</title>
     <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .ip-info {
+            background: rgba(0, 255, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        .auto-detect {
+            background: rgba(255, 165, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 165, 0, 0.3);
+        }
+        .manual-ip {
+            background: rgba(255, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+        .ip-input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ff0000;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-radius: 4px;
+            width: 150px;
+        }
+        .setup-btn {
+            background: rgba(255, 0, 0, 0.2);
+            color: white;
+            border: 1px solid #ff0000;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .setup-btn:hover {
+            background: rgba(255, 0, 0, 0.3);
+        }
+        .detect-btn {
+            background: rgba(0, 255, 0, 0.2);
+            color: white;
+            border: 1px solid #00ff00;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .detect-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+        }
+        .status-good {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .status-bad {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .status-waiting {
+            color: #ffff00;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body onload="checkbinserverstatus()">
+<body onload="autoDetectIP()">
     <div class="container">
         <header class="header">
             <h1>GoldHEN Bin Server Web Payloads</h1>
@@ -16,8 +84,30 @@
             </div>
         </header>
 
+        <!-- معلومات IP المكتشف -->
+        <div class="ip-info" id="ipInfo">
+            <h3>معلومات الاتصال</h3>
+            <div id="detectedIP">جاري اكتشاف عنوان IP...</div>
+            <div id="connectionStatus" class="status-waiting">جاري فحص السيرفر...</div>
+        </div>
+
+        <!-- الاكتشاف التلقائي -->
+        <div class="auto-detect">
+            <h3>🔄 الاكتشاف التلقائي</h3>
+            <button class="detect-btn" onclick="autoDetectIP()">إعادة الاكتشاف</button>
+            <button class="detect-btn" onclick="scanNetwork()">مسح الشبكة (بطيء)</button>
+        </div>
+
+        <!-- الإعداد اليدوي -->
+        <div class="manual-ip">
+            <h3>⚙️ الإعداد اليدوي</h3>
+            <p>إذا فشل الاكتشاف التلقائي، أدخل IP الـ PS4 يدوياً:</p>
+            <input type="text" id="manualIP" class="ip-input" placeholder="مثال: 192.168.1.5">
+            <button class="setup-btn" onclick="setManualIP()">حفظ وتوصيل</button>
+        </div>
+
         <div class="status-bar">
-            <div id="msgs">Checking GoldHEN Bin Server status...</div>
+            <div id="msgs">جارٍ التحضير...</div>
         </div>
 
         <main class="main-content">
@@ -39,191 +129,317 @@
 
         <footer class="footer">
             <p>Devoloper By Jehad Sammak</p>
-            </footer>
+        </footer>
     </div>
 
     <script>
         // JavaScript functions for the interface
 
-    // Function to update the message display
-    function updateMessage(message) {
-        document.getElementById('msgs').innerHTML = message;
-    }
+        // الاكتشاف التلقائي لـ IP
+        function autoDetectIP() {
+            document.getElementById('detectedIP').innerHTML = "🔍 جاري اكتشاف عنوان IP...";
+            document.getElementById('connectionStatus').innerHTML = "⏳ جاري الفحص...";
+            document.getElementById('connectionStatus').className = "status-waiting";
 
-    // Function to reset the message display
-    function resetMessage() {
-        document.getElementById('msgs').innerHTML = 'GoldHEN Bin Server Web Payloads';
-    }
-
-    // Function to show loading state
-    function showLoading() {
-        document.getElementById('msgs').classList.add('loading');
-    }
-
-    // Function to hide loading state
-    function hideLoading() {
-        document.getElementById('msgs').classList.remove('loading');
-    }
-
-    // Check Cache Status - Fixed version
-    if (!localStorage.getItem('appCacheLoaded')) {
-        window.location.replace("cache.html");
-    }
-
-    // Initialization of variables
-    var payloadData = "";
-    var array = "";
-    var PLfile = "";
-    var LoadedMSG = "";
-    localStorage.setItem("ipaddress","127.0.0.1");
-
-    // Functions
-    function pldone() {
-        document.getElementById('msgs').innerHTML = LoadedMSG;
-        hideLoading();
-    }
-
-    // Function to 'Load' the payload file to be send to GoldHEN Bin Server.	
-    var getPayload = function(payload, onLoadEndCallback) {
-        var req = new XMLHttpRequest();
-        req.open('GET', payload);
-        req.send();
-        req.responseType = "arraybuffer";
-        req.onload = function(event) {
-            if(onLoadEndCallback) onLoadEndCallback(req, event);
-        };
-    };
-
-    // Function to 'Send' the payload file to GoldHEN Bin Server using Html POST method. 
-    var sendPayload = function(url, data, onLoadEndCallback) {
-        var req = new XMLHttpRequest();
-        req.open("POST", url, true);
-        req.send(data);
-        req.onload = function(event) {
-            if(onLoadEndCallback) onLoadEndCallback(req, event);
-        };
-    };
-
-    // Function to check current status of the GoldHEN Bin Server
-    function checkbinserverstatus() {
-        var req = new XMLHttpRequest(); 
-        req.open("POST", "http://"+localStorage.ipaddress+":9090/status");
-        req.send();
-        req.onerror = function() {
-            document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>GoldHEN Bin Server Not Detected!!!</h1>";
-            sessionStorage.isbinserver = "no";
-        };
-        req.onload = function() {
-            var responseJson = JSON.parse(req.responseText);
-            if (responseJson.status == "ready") {
-                document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>GoldHEN Bin Server Detected, Payloads Will run over HTTP-POST!!!</h1>";
-                sessionStorage.isbinserver = "yes";
-            }
-        };
-    }
-
-    // Payloads to be loaded over GoldHEN Bin Server method
-    function LoadpayloadGoldHEN(PLfile) {
-        // Loading Payload via Payload Param.
-        // First do an initial check to see if the BinLoader server is running, ready or busy.
-        var req = new XMLHttpRequest(); 
-        req.open("POST", "http://"+localStorage.ipaddress+":9090/status");
-        req.send();
-        req.onerror = function() {
-            alert("Cannot Load Payload Because The BinLoader Server Is Not Running");
-            return;
-        };
-        req.onload = function() {
-            var responseJson = JSON.parse(req.responseText);
-            if (responseJson.status == "ready") {
-                getPayload(PLfile, function (req) {
-                    if ((req.status === 200 || req.status === 304) && req.response) {
-                        // Sending bins via IP POST Method
-                        sendPayload("http://" + localStorage.ipaddress + ":9090", req.response, function (req) {
-                            if (req.status === 200) {
-                                pldone();
-                            } else {
-                                document.getElementById('msgs').innerHTML = 'Cannot send payload';
-                                return;
-                            }
-                        })
-                    }
-                });
-            } else {
-                alert("Cannot Load Payload Because The BinLoader Server Is Busy");
+            // محاولة الحصول على IP من عنوان الصفحة الحالي
+            var currentURL = window.location.href;
+            var urlIP = extractIPFromURL(currentURL);
+            
+            if (urlIP) {
+                testIPConnection(urlIP);
                 return;
             }
+
+            // محاولة استخدام عنوان المضيف
+            var hostname = window.location.hostname;
+            if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+                testIPConnection(hostname);
+                return;
+            }
+
+            // إذا فشل كل شيء، جرب العناوين الشائعة
+            tryCommonIPs();
+        }
+
+        // استخراج IP من URL
+        function extractIPFromURL(url) {
+            var ipMatch = url.match(/\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/);
+            return ipMatch ? ipMatch[0] : null;
+        }
+
+        // تجربة العناوين الشائعة
+        function tryCommonIPs() {
+            var commonIPs = [
+                '192.168.1.5',
+                '192.168.0.5',
+                '192.168.1.10',
+                '192.168.0.10',
+                '192.168.1.15',
+                '192.168.0.15',
+                '192.168.1.20',
+                '192.168.0.20'
+            ];
+
+            document.getElementById('detectedIP').innerHTML = "🔍 جرب العناوين الشائعة...";
+
+            var tested = 0;
+            var found = false;
+
+            commonIPs.forEach(function(ip) {
+                setTimeout(function() {
+                    if (!found) {
+                        testIPConnection(ip, true);
+                        tested++;
+                        
+                        if (tested === commonIPs.length && !found) {
+                            document.getElementById('detectedIP').innerHTML = "❌ لم يتم العثور على PS4 تلقائياً";
+                            document.getElementById('connectionStatus').innerHTML = "⚠️ الرجاء إدخال IP يدوياً";
+                            document.getElementById('connectionStatus').className = "status-bad";
+                        }
+                    }
+                }, tested * 1000); // فحص كل IP بعد ثانية من سابقه
+            });
+        }
+
+        // فحص اتصال IP معين
+        function testIPConnection(ip, isSilent = false) {
+            if (!isSilent) {
+                document.getElementById('detectedIP').innerHTML = "🔍 فحص: " + ip;
+            }
+
+            var req = new XMLHttpRequest();
+            req.open("POST", "http://" + ip + ":9090/status");
+            req.timeout = 3000;
+
+            req.ontimeout = function() {
+                if (!isSilent) {
+                    document.getElementById('connectionStatus').innerHTML = "❌ لا استجابة من: " + ip;
+                    document.getElementById('connectionStatus').className = "status-bad";
+                }
+            };
+
+            req.onerror = function() {
+                if (!isSilent) {
+                    document.getElementById('connectionStatus').innerHTML = "❌ خطأ في الاتصال: " + ip;
+                    document.getElementById('connectionStatus').className = "status-bad";
+                }
+            };
+
+            req.onload = function() {
+                try {
+                    var responseJson = JSON.parse(req.responseText);
+                    if (responseJson.status == "ready") {
+                        localStorage.setItem("ipaddress", ip);
+                        document.getElementById('detectedIP').innerHTML = "✅ تم اكتشاف PS4 على: " + ip;
+                        document.getElementById('connectionStatus').innerHTML = "✅ السيرفر جاهز - GoldHEN Bin Server متصل";
+                        document.getElementById('connectionStatus').className = "status-good";
+                        window.foundIP = ip;
+                    }
+                } catch(e) {
+                    if (!isSilent) {
+                        document.getElementById('connectionStatus').innerHTML = "❌ استجابة غير صحيحة من: " + ip;
+                        document.getElementById('connectionStatus').className = "status-bad";
+                    }
+                }
+            };
+
+            req.send();
+        }
+
+        // مسح الشبكة (بطيء)
+        function scanNetwork() {
+            document.getElementById('detectedIP').innerHTML = "🔍 مسح الشبكة (قد يستغرق دقيقة)...";
+            
+            var baseIP = '192.168.1.'; // يمكن تعديله حسب شبكتك
+            var found = false;
+
+            for (var i = 1; i <= 254; i++) {
+                if (found) break;
+                
+                setTimeout(function(x) {
+                    return function() {
+                        if (!found) {
+                            var testIP = baseIP + x;
+                            var req = new XMLHttpRequest();
+                            req.open("POST", "http://" + testIP + ":9090/status");
+                            req.timeout = 1000;
+
+                            req.onload = function() {
+                                try {
+                                    var responseJson = JSON.parse(req.responseText);
+                                    if (responseJson.status == "ready") {
+                                        found = true;
+                                        localStorage.setItem("ipaddress", testIP);
+                                        document.getElementById('detectedIP').innerHTML = "✅ تم العثور على PS4: " + testIP;
+                                        document.getElementById('connectionStatus').innerHTML = "✅ السيرفر جاهز";
+                                        document.getElementById('connectionStatus').className = "status-good";
+                                        window.foundIP = testIP;
+                                    }
+                                } catch(e) {}
+                            };
+
+                            req.send();
+                        }
+                    };
+                }(i), i * 50); // تأخير 50ms بين كل محاولة
+            }
+        }
+
+        // الإعداد اليدوي
+        function setManualIP() {
+            var ip = document.getElementById('manualIP').value;
+            if (ip) {
+                testIPConnection(ip);
+            }
+        }
+
+        // Function to update the message display
+        function updateMessage(message) {
+            document.getElementById('msgs').innerHTML = message;
+        }
+
+        // Function to reset the message display
+        function resetMessage() {
+            document.getElementById('msgs').innerHTML = 'GoldHEN Bin Server Web Payloads';
+        }
+
+        // Check Cache Status
+        if (!localStorage.getItem('appCacheLoaded')) {
+            window.location.replace("cache.html");
+        }
+
+        // Initialization of variables
+        var payloadData = "";
+        var array = "";
+        var PLfile = "";
+        var LoadedMSG = "";
+
+        // Functions
+        function pldone() {
+            document.getElementById('msgs').innerHTML = LoadedMSG;
+        }
+
+        // Function to 'Load' the payload file to be send to GoldHEN Bin Server.	
+        var getPayload = function(payload, onLoadEndCallback) {
+            var req = new XMLHttpRequest();
+            req.open('GET', payload);
+            req.send();
+            req.responseType = "arraybuffer";
+            req.onload = function(event) {
+                if(onLoadEndCallback) onLoadEndCallback(req, event);
+            };
         };
-    }
 
-    // Payload loading functions
-    function load_pkgbackup() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading PKG-Backup v1.3. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "PKG-Backup v1.3 Loaded";
-        PLfile = "pl_pkgbackup.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        // Function to 'Send' the payload file to GoldHEN Bin Server using Html POST method. 
+        var sendPayload = function(url, data, onLoadEndCallback) {
+            var req = new XMLHttpRequest();
+            req.open("POST", url, true);
+            req.send(data);
+            req.onload = function(event) {
+                if(onLoadEndCallback) onLoadEndCallback(req, event);
+            };
+        };
 
-    function load_appdumper() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading App Dumper Only v1.8. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "App Dumper Only v1.8 Loaded";
-        PLfile = "pl_appdumper.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        // Payloads to be loaded over GoldHEN Bin Server method
+        function LoadpayloadGoldHEN(PLfile) {
+            var currentIP = localStorage.getItem("ipaddress");
+            
+            if (!currentIP) {
+                alert("الرجاء تحديد عنوان PS4 أولاً");
+                return;
+            }
 
-    function load_disableupdates() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Disable-Updates v1.0. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "Disable-Updates v1.0 Loaded";
-        PLfile = "pl_disableupdates.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+            document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>جاري التحميل: " + PLfile + "</h1>";
+            
+            var req = new XMLHttpRequest(); 
+            req.open("POST", "http://"+currentIP+":9090/status");
+            req.timeout = 5000;
+            req.send();
+            
+            req.ontimeout = function() {
+                alert("السيرفر لا يستجيب - تأكد من تشغيل GoldHEN");
+            };
+            
+            req.onerror = function() {
+                alert("لا يمكن الاتصال بالسيرفر - تأكد من IP");
+            };
+            
+            req.onload = function() {
+                try {
+                    var responseJson = JSON.parse(req.responseText);
+                    if (responseJson.status == "ready") {
+                        getPayload(PLfile, function (req) {
+                            if ((req.status === 200 || req.status === 304) && req.response) {
+                                sendPayload("http://" + currentIP + ":9090", req.response, function (req) {
+                                    if (req.status === 200) {
+                                        pldone();
+                                    } else {
+                                        document.getElementById('msgs').innerHTML = 'خطأ في الإرسال';
+                                    }
+                                })
+                            }
+                        });
+                    } else {
+                        alert("السيرفر مشغول حالياً");
+                    }
+                } catch(e) {
+                    alert("خطأ في استجابة السيرفر");
+                }
+            };
+        }
 
-    function load_enableupdates() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Enable-Updates v1.0. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "Enable-Updates v1.0 Loaded";
-        PLfile = "pl_enableupdates.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        // باقي دوال البايلودز تبقى كما هي...
+        function load_pkgbackup() {
+            LoadedMSG = "PKG-Backup v1.3 Loaded";
+            PLfile = "pl_pkgbackup.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
 
-    function load_exitidu() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Exit IDU. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "Exit IDU Loaded";
-        PLfile = "pl_exitidu.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        function load_appdumper() {
+            LoadedMSG = "App Dumper Only v1.8 Loaded";
+            PLfile = "pl_appdumper.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
 
-    function load_ftp() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Ftp Server. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "Ftp Server Loaded";
-        PLfile = "pl_ftp.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        function load_disableupdates() {
+            LoadedMSG = "Disable-Updates v1.0 Loaded";
+            PLfile = "pl_disableupdates.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
 
-    function load_ps4debug() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading Ps4Debug v1.1.19. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "Ps4Debug v1.1.19 Loaded";
-        PLfile = "pl_ps4debug.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        function load_enableupdates() {
+            LoadedMSG = "Enable-Updates v1.0 Loaded";
+            PLfile = "pl_enableupdates.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
 
-    function load_app2usb() {
-        document.getElementById('msgs').innerHTML = "<h1 style='font-size:25px;text-align:center;'>Loading App-2-Usb. Please wait!</h1>";
-        showLoading();
-        LoadedMSG = "App-2-Usb Loaded";
-        PLfile = "pl_app2usb.bin";
-        LoadpayloadGoldHEN(PLfile);
-    }
+        function load_exitidu() {
+            LoadedMSG = "Exit IDU Loaded";
+            PLfile = "pl_exitidu.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
 
-    // Get PS4 firmware version
-    var UA = navigator.userAgent.substring(navigator.userAgent.indexOf('5.0 (') + 19, navigator.userAgent.indexOf(') Apple')).replace("PlayStation 4/","");
-    document.getElementById('PS4fw').innerHTML = "v"+UA+" Detected";
-  </script>
+        function load_ftp() {
+            LoadedMSG = "Ftp Server Loaded";
+            PLfile = "pl_ftp.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
+
+        function load_ps4debug() {
+            LoadedMSG = "Ps4Debug v1.1.19 Loaded";
+            PLfile = "pl_ps4debug.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
+
+        function load_app2usb() {
+            LoadedMSG = "App-2-Usb Loaded";
+            PLfile = "pl_app2usb.bin";
+            LoadpayloadGoldHEN(PLfile);
+        }
+
+        // Get PS4 firmware version
+        var UA = navigator.userAgent.substring(navigator.userAgent.indexOf('5.0 (') + 19, navigator.userAgent.indexOf(') Apple')).replace("layStation 4/","");
+        document.getElementById('PS4fw').innerHTML = "v"+UA+" Detected";
+    </script>
 </body>
 </html>
