@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -65,8 +65,8 @@
         document.getElementById('msgs').classList.remove('loading');
     }
 
-    // Check Cache Status
-    if (window.applicationCache.status=='0') {
+    // Check Cache Status - Fixed version
+    if (!localStorage.getItem('appCacheLoaded')) {
         window.location.replace("cache.html");
     }
 
@@ -222,7 +222,7 @@
     }
 
     // Get PS4 firmware version
-    var UA = navigator.userAgent.substring(navigator.userAgent.indexOf('5.0 (') + 19, navigator.userAgent.indexOf(') Apple')).replace("layStation 4/","");
+    var UA = navigator.userAgent.substring(navigator.userAgent.indexOf('5.0 (') + 19, navigator.userAgent.indexOf(') Apple')).replace("PlayStation 4/","");
     document.getElementById('PS4fw').innerHTML = "v"+UA+" Detected";
   </script>
 </body>
